@@ -1,4 +1,4 @@
-const socket = io("http://localhost:3000");
+const socket = io("http://localhost:8000");
 
 document.getElementById("getLocButton").onclick = () => {
     console.log("requesting streaming locators");
@@ -20,6 +20,18 @@ document.getElementById("refreshButton").onclick = () => {
     socket.emit('refresh_locators');
 }
 
+document.getElementById("s_EncodeButton").onclick = () => {
+    console.log("Asking politely for a special encode...");
+    socket.emit("s_encode");
+}
+
+document.getElementById("bigRedButton").onclick = () => {
+    console.log("Requesting an environment build 2k");
+    socket.emit("bigRedButton");
+}
+
+// Responding events
+
 socket.on('locators_response', data => {
     data = JSON.parse(data);
     console.log(data);
@@ -34,3 +46,4 @@ socket.on('expired_response', data => {
     data = JSON.parse(data);
     console.log(data);
 })
+

@@ -1,15 +1,23 @@
 //Example server code, sans all the server code.
 
+const express = require('express');
+const app = express();
+const cors = require('cors');
+
+app.use(express.json(), express.urlencoded({extended: true}));
+
+app.use(cors());
+require("./scripts/routes")(app);
+
+const server = app.listen(8000, () => console.log("The server is ready on port 8000"));
+
+
+
 const admin = require("./script");
 
 const Administrator = new admin();
 
-const io = require('socket.io')(3000, {
-    cors: {
-        origin: "http://127.0.0.1:5500",
-        methods: ["GET", "POST"]
-    }
-});
+const io = require('socket.io')(server);
 
 io.on("connection", socket => {
     console.log("Connection established");
@@ -29,7 +37,8 @@ io.on("connection", socket => {
 
     socket.on('refresh_locators', async () => {
         console.log("Got a request to refresh the streaming locators");
-        Administrator.remakeAll();
+       // Administrator.remakeAll();
+       Administrator.refreshExpired();
     })
 
     socket.on('populate_db', async () => {
@@ -37,5 +46,15 @@ io.on("connection", socket => {
         let results = await Administrator.transferStreamingLocators();
         socket.emit('table_results', JSON.stringify(results));
     });
+
+    socket.on("s_encode", async () => {
+        console.log("Got a request for a special encode.");
+        Administrator.encodeWithSaas();
+    });
+
+    socket.on("bigRedButton", async () => {
+        console.log("Got a request for a 2k locator build");
+        Administrator.buildEnvironment();
+    })
     
 })
