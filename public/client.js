@@ -26,8 +26,13 @@ document.getElementById("s_EncodeButton").onclick = () => {
 }
 
 document.getElementById("bigRedButton").onclick = () => {
-    console.log("Requesting an environment build 2k");
-    socket.emit("bigRedButton");
+    console.log("Requesting an environment build 150");
+    let val = document.getElementById("targetAsset").value;
+    let message = {
+        target: val
+    }
+    message = JSON.stringify(message);
+    socket.emit("bigRedButton", message);
 }
 
 // Responding events
@@ -45,5 +50,9 @@ socket.on('table_results', data => {
 socket.on('expired_response', data => {
     data = JSON.parse(data);
     console.log(data);
+})
+
+socket.on('job_done', () => {
+    console.log("Backend says job done!");
 })
 

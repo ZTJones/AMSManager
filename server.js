@@ -52,9 +52,12 @@ io.on("connection", socket => {
         Administrator.encodeWithSaas();
     });
 
-    socket.on("bigRedButton", async () => {
-        console.log("Got a request for a 2k locator build");
-        Administrator.buildEnvironment();
+    socket.on("bigRedButton", async (message) => {
+        message = JSON.parse(message);
+        console.log("Got a request for a 150 locator build");
+        console.log("val: " + message.target)
+        await Administrator.buildEnvironment(message.target);
+        socket.emit("job_done");
     })
     
 })

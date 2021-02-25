@@ -17,18 +17,13 @@ const knex = require('knex')({
     }
 });
 
-const resourceGroup = "contractortemp";
-const accountName = "zjonestemp";
-const aadClientId = "76da4223-8f0d-4c23-a6d0-40625eac2d59";
-const aadSecret = "bP0M5Os2SFd~-.Vc.YuG4R.01F01ESt17w";
-const aadDomain = "microsoft.onmicrosoft.com";
-const subscriptionId = "77961763-d931-4c0f-8579-f7f1980eee92";
-const resourceGroup = "contractortemp";
-const accountName = "zjonestemp";
-const aadClientId = "76da4223-8f0d-4c23-a6d0-40625eac2d59";
-const aadSecret = "bP0M5Os2SFd~-.Vc.YuG4R.01F01ESt17w";
-const aadDomain = "microsoft.onmicrosoft.com";
-const subscriptionId = "77961763-d931-4c0f-8579-f7f1980eee92";
+
+const resourceGroup = "";
+const accountName = "";
+const aadClientId = "";
+const aadSecret = "";
+const aadDomain = "";
+const subscriptionId = "";
 
 
 // let azureMediaServicesClient;
@@ -38,17 +33,6 @@ const subscriptionId = "77961763-d931-4c0f-8579-f7f1980eee92";
 module.exports = class Administrator{
     constructor(){
         this.azureMediaServicesClient;
-        
-        // This method of connection can be used to connect through a browser.
-        // msRestNodeAuth.interactiveLogin().then( async (creds) => {
-        //     this.azureMediaServicesClient = new MediaServices.AzureMediaServices(creds, subscriptionId);
-        //     // let assetList = await this.azureMediaServicesClient.assets.list(resourceGroup, accountName, {top: 5});
-        //     // console.log(assetList);
-        //     console.log("You are now connected to your AMS account");
-        
-        // }).catch((err) => {
-        //     console.error(err);
-        // });
 
         // This method of connection is faster, and better for testing.
         msRestNodeAuth.loginWithServicePrincipalSecret(aadClientId, aadSecret, aadDomain).then( creds => {
@@ -57,20 +41,28 @@ module.exports = class Administrator{
         }).catch((err) => {
             console.error(err);
         })
-
-        // knex.schema.createTable('assets', table => {
-        //     table.increments('id');
-        //     table.string('asset_id');
-        //     table.string('streaming_locator');
-        //     console.log("Table created!");
-        // }).catch(err => console.log("There's been an error: " + err));
         
     }
 
     async getStreamingLocators(){
         let locatorList = await this.azureMediaServicesClient.streamingLocators.list(resourceGroup, accountName);
-        console.log(locatorList);
-        return locatorList;
+        let results = [];
+
+        locatorList.forEach(element => {
+            results.push(element);
+        });
+        console.log(results);
+        while(locatorList.odatanextLink != undefined){
+            console.log(locatorList.odatanextLink);
+            locatorList = await this.azureMediaServicesClient.streamingLocators.listNext(locatorList.odatanextLink);
+            // console.log(locatorList);
+            locatorList.forEach(element => {
+                results.push(element);
+            });
+        }
+        
+        
+        return results;
     }
 
     async getAllAssets(){
@@ -134,7 +126,7 @@ module.exports = class Administrator{
         // we can fill this in later
     }
 
-    async buildEnvironment(){
+    async buildEnvironment(targetName = "m4-4-2-mp3-20210028-180901_Output_20210028-181609"){
         let failCount = 0;
         let breakTime = new Date();
         let consecFails = 0;
@@ -149,7 +141,7 @@ module.exports = class Administrator{
 
                 await this.azureMediaServicesClient.streamingLocators.create(resourceGroup, accountName, "locator-" + uniqueness, {
                     streamingPolicyName: "Predefined_ClearStreamingOnly",
-                    assetName: "m4-4-2-mp3-20210028-180901_Output_20210028-181609",
+                    assetName: targetName, // can now specify on the HTML what asset you want to make locators for
                     endTime: breakTime
                 })
                 consecFails = 0;
@@ -168,8 +160,8 @@ module.exports = class Administrator{
     
     async getExpiredLocators(){
         //
-        let locatorList = await this.azureMediaServicesClient.streamingLocators.list(resourceGroup, accountName);
-        console.log(locatorList);
+        let locatorList = await this.getStreamingLocators();
+        // console.log(locatorList);
         let expiredList = [];
         locatorList.forEach(locator => {
             console.log(locator.endTime);
@@ -219,7 +211,8 @@ module.exports = class Administrator{
         let expiredList = await this.getExpiredLocators();
         expiredList.forEach(async locator => {
             let breakTime = new Date();
-            breakTime.setFullYear(breakTime.getFullYear() + 100);
+            // breakTime.setFullYear(breakTime.getFullYear() + 100); // for setting expiry 100 years from now
+            breakTime.setMinutes(breakTime.getMinutes() + 5); // for setting expiry 5 minutes from now (TESTING PURPOSES);
             console.log(locator.assetName);
             try{
 
@@ -240,14 +233,9 @@ module.exports = class Administrator{
                         console.log("Error: \n" + er);
                     }
                 }
-                // this.azureMediaServicesClient.streamingLocators.create()
-                // console.log(newLoc);
-                // console.log("locator's streaming locatorID: " + locator.streamingLocatorId);
             }catch(er){
                 console.log(er);
             }
-                // let test = await knex("assets").where("streaming_locator", locator.streamingLocatorId)
-            // .update({streaming_locator: newLoc.streamingLocatorId})
 
         });
     }
